@@ -1,5 +1,6 @@
 package sasf.net.sri2;
 import java.util.Date;
+import java.text.SimpleDateFormat;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -7,6 +8,7 @@ import javax.persistence.Id;
 
 @Entity
 public class ImpuestoTarifa {
+	public static SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy"); 
 	private int sriImpuesCodigo;
 	private @Id @GeneratedValue int codigo;
 	private int codigoInstitucionControl;
@@ -38,6 +40,9 @@ public class ImpuestoTarifa {
 		this.sriImpuesCodigo = sriImpuesCodigo;
 		this.descripcion = descripcion;
 		this.estado="A";
+		this.fechaIngreso=new Date();
+		this.fechaDesde=DateUtil.subDays(fechaIngreso, 5);
+		this.fechaHasta=DateUtil.addDays(fechaIngreso, 5);
 	}
 	public ImpuestoTarifa() {
 		super();

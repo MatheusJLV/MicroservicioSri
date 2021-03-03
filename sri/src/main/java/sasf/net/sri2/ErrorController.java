@@ -1,6 +1,7 @@
 package sasf.net.sri2;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -24,15 +25,20 @@ class ErrorController {
   private final PuntoEmisionRepository repository3;
   private final ImpuestoRepository repository4;
   private final ImpuestoTarifaRepository repository5;
+  private final RetencionFuenteRepository repository6;
+  private final RetencionFuentePorcentajeRepository repository7;
 
   ErrorController(ErrorRepository repository, ComprobanteRepository repository2,
 		  PuntoEmisionRepository repository3, ImpuestoRepository repository4,
-		  ImpuestoTarifaRepository repository5) {
+		  ImpuestoTarifaRepository repository5, RetencionFuenteRepository repository6
+		  , RetencionFuentePorcentajeRepository repository7) {
     this.repository = repository;
     this.repository2 = repository2;
     this.repository3 = repository3;
     this.repository4 = repository4;
     this.repository5 = repository5;
+    this.repository6 = repository6;
+    this.repository7 = repository7;
   }
 
 
@@ -529,7 +535,7 @@ class ErrorController {
 		  repository4.save(comprobante);
 	  }
   }
-  @GetMapping("/{codigoImpuesto}/{fecha}")
+  @GetMapping("/impuestoTarifa/{codigoImpuesto}/{fecha}")
   List<ImpuestoTarifa> getImpuestoTarifaPorEstados(@RequestParam(required = false) Integer codigo, 
 		  @RequestParam(required = false) Integer codigoInstitucionControl,
 		  @RequestParam(required = false) String descripcion,
@@ -597,6 +603,381 @@ class ErrorController {
 	  return listado2;
       
   }
+  
+  @PostMapping("/impuestoTarifa")
+  public List<ImpuestoTarifa> newImpuestoTarifa(@RequestBody ImpuestoTarifa newImpuestoTarifa) {
+	  //validar fecha, sri codimp, porcentaje, ce cada, valor, fecha desde, hasta
+	  Sri2Application.Log.info("Impuesto tarifa recibido: "+newImpuestoTarifa);
+	  List<ImpuestoTarifa> listado=repository5.findAll();
+	  Date refSuperior,refInferior;
+	  
+	  boolean aceptado=true;
+	  if(newImpuestoTarifa.getFechaDesde()!=null &&
+			  newImpuestoTarifa.getFechaHasta()!=null) {
+		  for (int i = 0; i<listado.size(); i=i+1) {
+			  refSuperior=listado.get(i).getFechaHasta();
+			  refInferior=listado.get(i).getFechaDesde();
+			  aceptado=aceptado&& ((newImpuestoTarifa.getFechaDesde()).compareTo(refInferior)*
+					  (newImpuestoTarifa.getFechaDesde()).compareTo(refSuperior)>0) &&
+					  ((newImpuestoTarifa.getFechaHasta()).compareTo(refInferior)*
+							  (newImpuestoTarifa.getFechaHasta()).compareTo(refSuperior)>0);
+		  }
+	  }
+	  
+	  
+	  if(newImpuestoTarifa.getDescripcion()!=null && newImpuestoTarifa.getDescripcion()!=""
+			  && newImpuestoTarifa.getCodigoInstitucionControl()!=0 &&
+			  newImpuestoTarifa.getFechaDesde()!=null &&
+			  newImpuestoTarifa.getFechaHasta()!=null &&
+			  newImpuestoTarifa.getValor()!=0 &&
+			  newImpuestoTarifa.getDeCada()!=0 &&
+			  newImpuestoTarifa.getPorcentaje()!=0 &&
+			  newImpuestoTarifa.getSriImpuesCodigo()!=0 &&
+			  aceptado
+			  ) {
+		  
+		  repository5.save(newImpuestoTarifa);
+	  }
+	  return repository5.findAll();
+  }
+  
+  @PostMapping("/impuestoTarifa/varios")
+  public List<ImpuestoTarifa> newImpuestoTarifa(@RequestBody List<ImpuestoTarifa> lista) {
+	  //validar fecha, sri codimp, porcentaje, ce cada, valor, fecha desde, hasta
+	  List<ImpuestoTarifa> listado;
+	  for(ImpuestoTarifa newImpuestoTarifa:lista) {
+		  Sri2Application.Log.info("Impuesto tarifa recibido: "+newImpuestoTarifa);
+		  listado=repository5.findAll();
+		  Date refSuperior,refInferior;
+		  
+		  boolean aceptado=true;
+		  if(newImpuestoTarifa.getFechaDesde()!=null &&
+				  newImpuestoTarifa.getFechaHasta()!=null) {
+			  for (int i = 0; i<listado.size(); i=i+1) {
+				  refSuperior=listado.get(i).getFechaHasta();
+				  refInferior=listado.get(i).getFechaDesde();
+				  aceptado=aceptado&& ((newImpuestoTarifa.getFechaDesde()).compareTo(refInferior)*
+						  (newImpuestoTarifa.getFechaDesde()).compareTo(refSuperior)>0) &&
+						  ((newImpuestoTarifa.getFechaHasta()).compareTo(refInferior)*
+								  (newImpuestoTarifa.getFechaHasta()).compareTo(refSuperior)>0);
+			  }
+		  }
+		  
+		  
+		  if(newImpuestoTarifa.getDescripcion()!=null && newImpuestoTarifa.getDescripcion()!=""
+				  && newImpuestoTarifa.getCodigoInstitucionControl()!=0 &&
+				  newImpuestoTarifa.getFechaDesde()!=null &&
+				  newImpuestoTarifa.getFechaHasta()!=null &&
+				  newImpuestoTarifa.getValor()!=0 &&
+				  newImpuestoTarifa.getDeCada()!=0 &&
+				  newImpuestoTarifa.getPorcentaje()!=0 &&
+				  newImpuestoTarifa.getSriImpuesCodigo()!=0 &&
+				  aceptado
+				  ) {
+			  
+			  repository5.save(newImpuestoTarifa);
+		  }
+	  }
+	  
+	  return repository5.findAll();
+  }
+  
+  @PutMapping("/impuestoTarifa")
+  public void ReplaceImpuestoTarifa(@RequestBody ImpuestoTarifa newImpuestoTarifa) {
+	  ImpuestoTarifa impuestoTarifa = repository5.findById(newImpuestoTarifa.getCodigo())
+      .orElseThrow(() -> new ImpuestoTarifaNotFoundException(newImpuestoTarifa.getCodigo()));
+	  impuestoTarifa.setDescripcion(newImpuestoTarifa.getDescripcion());
+	  impuestoTarifa.setCodigoInstitucionControl(newImpuestoTarifa.getCodigoInstitucionControl());
+	  impuestoTarifa.setObservacionEstado(newImpuestoTarifa.getObservacionEstado());
+	  impuestoTarifa.setFechaEstado(newImpuestoTarifa.getFechaEstado());
+	  impuestoTarifa.setEstado(newImpuestoTarifa.getEstado());
+	  impuestoTarifa.setFechaHasta(newImpuestoTarifa.getFechaHasta());
+	  repository5.save(impuestoTarifa);
+    
+  }
+  
+  @PutMapping("/impuestoTarifa/varios")
+  public void ReplaceImpuestoTarifaVarios(@RequestBody List<ImpuestoTarifa> listado) {
+	  for(ImpuestoTarifa newImpuestoTarifa:listado) {
+		  ImpuestoTarifa impuestoTarifa = repository5.findById(newImpuestoTarifa.getCodigo())
+			      .orElseThrow(() -> new ImpuestoTarifaNotFoundException(newImpuestoTarifa.getCodigo()));
+				  impuestoTarifa.setDescripcion(newImpuestoTarifa.getDescripcion());
+				  impuestoTarifa.setCodigoInstitucionControl(newImpuestoTarifa.getCodigoInstitucionControl());
+				  impuestoTarifa.setObservacionEstado(newImpuestoTarifa.getObservacionEstado());
+				  impuestoTarifa.setFechaEstado(newImpuestoTarifa.getFechaEstado());
+				  impuestoTarifa.setEstado(newImpuestoTarifa.getEstado());
+				  impuestoTarifa.setFechaHasta(newImpuestoTarifa.getFechaHasta());
+				  repository5.save(impuestoTarifa);
+	  }
+	      
+  }
+  
+  @GetMapping("/retencionFuente")
+  List<RetencionFuente> getretencionFuentePorEstados(@RequestParam(required = false) Integer codigo, 
+		  @RequestParam(required = false) Integer codigoInstitucionControl,
+		  @RequestParam(required = false) String descripcion) {
+	  List<RetencionFuente> listado=repository6.findAll();
+	  List<RetencionFuente> listado2=new ArrayList<RetencionFuente>();
+	  for(RetencionFuente retencion:listado) {
+		  if("A".equals(retencion.getEstado())||"I".equals(retencion.getEstado())) {
+			  listado2.add(retencion);
+		  }
+	  }
+	  
+	  Sri2Application.Log.info("impuesto recibido: "+codigo);
+	  
+	  if(codigo!=null) {
+		  listado=listado2;
+		  listado2=new ArrayList<RetencionFuente>();
+		  
+		  for(RetencionFuente retencion:listado) {
+			  Sri2Application.Log.info("Codigo analizado: "+retencion.getCodigo());
+			  if(codigo==(retencion.getCodigo())) {
+				  listado2.add(retencion);
+			  }
+		  }
+	  }
+	  
+	  Sri2Application.Log.info("Descripcion recibida: "+descripcion);
+	  if(descripcion!=null) {
+		  listado=listado2;
+		  listado2=new ArrayList<RetencionFuente>();
+		  for(RetencionFuente retencion:listado) {
+			  Sri2Application.Log.info("descripcion analizada: "+retencion.getDescripcion());
+			  if(descripcion.equals(retencion.getDescripcion())) {
+				  listado2.add(retencion);
+			  }
+		  }
+	  }
+	  
+	  Sri2Application.Log.info("institucion recibida: "+codigoInstitucionControl);
+	  if(codigoInstitucionControl!=null) {
+		  listado=listado2;
+		  listado2=new ArrayList<RetencionFuente>();
+		  for(RetencionFuente retencion:listado) {
+			  Sri2Application.Log.info("cod insitut analizada: "+retencion.getCodigoInstitucionControl());
+			  if(codigoInstitucionControl.equals(retencion.getCodigoInstitucionControl())) {
+				  listado2.add(retencion);
+			  }
+		  }
+	  }
+	  
+	  return listado2;
+      
+  }
+  
+  
+  
+  @PostMapping("/retencionFuente")
+  public void newRetencionFuente(@RequestBody RetencionFuente newRetencionFuente) {
+	  Sri2Application.Log.info("retencion recibida: "+newRetencionFuente);
+	  if(newRetencionFuente.getDescripcion()!=null && newRetencionFuente.getDescripcion()!=""
+			  && newRetencionFuente.getCodigoInstitucionControl()!=0
+			  ) {
+		  repository6.save(newRetencionFuente);
+	  }
+  }
+  
+  @PostMapping("/retencionFuente/varios")
+  public void newRetencionFuenteVarios(@RequestBody List<RetencionFuente> listado) {
+	  for(RetencionFuente newRetencionFuente: listado) {
+		  Sri2Application.Log.info("retencion recibida: "+newRetencionFuente);
+		  if(newRetencionFuente.getDescripcion()!=null && newRetencionFuente.getDescripcion()!=""
+				  && newRetencionFuente.getCodigoInstitucionControl()!=0
+				  ) {
+			  repository6.save(newRetencionFuente);
+		  }
+	  }
+	  
+  }
+  
+  @PutMapping("/retencionFuente")
+  public void ReplaceRetencionFuente(@RequestBody RetencionFuente newRetencionFuente) {
+	  RetencionFuente retencion = repository6.findById(newRetencionFuente.getCodigo())
+      .orElseThrow(() -> new RetencionFuenteNotFoundException(newRetencionFuente.getCodigo()));
+	  retencion.setDescripcion(newRetencionFuente.getDescripcion());
+	  retencion.setCodigoInstitucionControl(newRetencionFuente.getCodigoInstitucionControl());
+	  retencion.setObservacionEstado(newRetencionFuente.getObservacionEstado());
+	  retencion.setFechaEstado(newRetencionFuente.getFechaEstado());
+	  retencion.setEstado(newRetencionFuente.getEstado());
+	  repository6.save(retencion);
+
+    
+  }
+  
+  @PutMapping("/retencionFuente/varios")
+  public void ReplaceRetencionFuenteVarios(@RequestBody List<RetencionFuente> listado) {
+	  for(RetencionFuente newRetencionFuente: listado) {
+		  RetencionFuente retencion = repository6.findById(newRetencionFuente.getCodigo())
+			      .orElseThrow(() -> new RetencionFuenteNotFoundException(newRetencionFuente.getCodigo()));
+				  retencion.setDescripcion(newRetencionFuente.getDescripcion());
+				  retencion.setCodigoInstitucionControl(newRetencionFuente.getCodigoInstitucionControl());
+				  retencion.setObservacionEstado(newRetencionFuente.getObservacionEstado());
+				  retencion.setFechaEstado(newRetencionFuente.getFechaEstado());
+				  retencion.setEstado(newRetencionFuente.getEstado());
+				  repository6.save(retencion);
+	  }
+    
+  }
+  
+  @GetMapping("/retencionFuentePorcentaje")
+  List<RetencionFuentePorcentaje> getretencionFuentePorcentajesPorEstados(@RequestParam(required = false) Integer codigo, 
+		  @RequestParam(required = false) Integer codigoInstitucionControl,
+		  @RequestParam(required = false) String descripcion) {
+	  List<RetencionFuentePorcentaje> listado=repository7.findAll();
+	  List<RetencionFuentePorcentaje> listado2=new ArrayList<RetencionFuentePorcentaje>();
+	  for(RetencionFuentePorcentaje retencion:listado) {
+		  if("A".equals(retencion.getEstado())||"I".equals(retencion.getEstado())) {
+			  listado2.add(retencion);
+		  }
+	  }
+	  
+	  Sri2Application.Log.info("impuesto recibido: "+codigo);
+	  
+	  if(codigo!=null) {
+		  listado=listado2;
+		  listado2=new ArrayList<RetencionFuentePorcentaje>();
+		  
+		  for(RetencionFuentePorcentaje retencion:listado) {
+			  Sri2Application.Log.info("Codigo analizado: "+retencion.getCodigo());
+			  if(codigo==(retencion.getCodigo())) {
+				  listado2.add(retencion);
+			  }
+		  }
+	  }
+	  
+	  Sri2Application.Log.info("Descripcion recibida: "+descripcion);
+	  if(descripcion!=null) {
+		  listado=listado2;
+		  listado2=new ArrayList<RetencionFuentePorcentaje>();
+		  for(RetencionFuentePorcentaje retencion:listado) {
+			  Sri2Application.Log.info("descripcion analizada: "+retencion.getDescripcion());
+			  if(descripcion.equals(retencion.getDescripcion())) {
+				  listado2.add(retencion);
+			  }
+		  }
+	  }
+	  
+	  Sri2Application.Log.info("institucion recibida: "+codigoInstitucionControl);
+	  if(codigoInstitucionControl!=null) {
+		  listado=listado2;
+		  listado2=new ArrayList<RetencionFuentePorcentaje>();
+		  for(RetencionFuentePorcentaje retencion:listado) {
+			  Sri2Application.Log.info("cod insitut analizada: "+retencion.getCodigoInstitucionControl());
+			  if(codigoInstitucionControl.equals(retencion.getCodigoInstitucionControl())) {
+				  listado2.add(retencion);
+			  }
+		  }
+	  }
+	  
+	  return listado2;
+      
+  }
+  
+  @PostMapping("/retencionFuentePorcentaje")
+  public List<RetencionFuentePorcentaje> newRetencionFuentePorcentaje(@RequestBody RetencionFuentePorcentaje newRetencionFuentePorcentaje) {
+	  Sri2Application.Log.info("Retencion Fuente Porcentaje recibido: "+newRetencionFuentePorcentaje);
+	  List<RetencionFuentePorcentaje> listado=repository7.findAll();
+	  Date refSuperior,refInferior;
+	  
+	  boolean aceptado=true;
+	  if(newRetencionFuentePorcentaje.getFechaDesde()!=null &&
+			  newRetencionFuentePorcentaje.getFechaHasta()!=null) {
+		  for (int i = 0; i<listado.size(); i=i+1) {
+			  refSuperior=listado.get(i).getFechaHasta();
+			  refInferior=listado.get(i).getFechaDesde();
+			  aceptado=aceptado&& ((newRetencionFuentePorcentaje.getFechaDesde()).compareTo(refInferior)*
+					  (newRetencionFuentePorcentaje.getFechaDesde()).compareTo(refSuperior)>0) &&
+					  ((newRetencionFuentePorcentaje.getFechaHasta()).compareTo(refInferior)*
+							  (newRetencionFuentePorcentaje.getFechaHasta()).compareTo(refSuperior)>0);
+		  }
+	  }
+	  
+	  
+	  if(newRetencionFuentePorcentaje.getDescripcion()!=null && newRetencionFuentePorcentaje.getDescripcion()!=""
+			  && newRetencionFuentePorcentaje.getCodigoInstitucionControl()!=0 &&
+					  newRetencionFuentePorcentaje.getFechaDesde()!=null &&
+						newRetencionFuentePorcentaje.getFechaHasta()!=null &&
+					  newRetencionFuentePorcentaje.getValor()!=0 &&
+						newRetencionFuentePorcentaje.getDeCada()!=0 &&
+						newRetencionFuentePorcentaje.getPorcentaje()!=0 &&
+						newRetencionFuentePorcentaje.getSriRetFuCodigo()!=0 &&
+			  aceptado
+			  ) {
+		  
+		  repository7.save(newRetencionFuentePorcentaje);
+	  }
+	  return repository7.findAll();
+  }
+  
+  @PostMapping("/retencionFuentePorcentaje/varios")
+  public List<RetencionFuentePorcentaje> newRetencionFuentePorcentajeVarios(@RequestBody List<RetencionFuentePorcentaje> lista) {
+	  for (RetencionFuentePorcentaje newRetencionFuentePorcentaje:lista) {
+		  Sri2Application.Log.info("Retencion Fuente Porcentaje recibido: "+newRetencionFuentePorcentaje);
+		  List<RetencionFuentePorcentaje> listado=repository7.findAll();
+		  Date refSuperior,refInferior;
+		  
+		  boolean aceptado=true;
+		  if(newRetencionFuentePorcentaje.getFechaDesde()!=null &&
+				  newRetencionFuentePorcentaje.getFechaHasta()!=null) {
+			  for (int i = 0; i<listado.size(); i=i+1) {
+				  refSuperior=listado.get(i).getFechaHasta();
+				  refInferior=listado.get(i).getFechaDesde();
+				  aceptado=aceptado&& ((newRetencionFuentePorcentaje.getFechaDesde()).compareTo(refInferior)*
+						  (newRetencionFuentePorcentaje.getFechaDesde()).compareTo(refSuperior)>0) &&
+						  ((newRetencionFuentePorcentaje.getFechaHasta()).compareTo(refInferior)*
+								  (newRetencionFuentePorcentaje.getFechaHasta()).compareTo(refSuperior)>0);
+			  }
+		  }
+		  
+		  
+		  if(newRetencionFuentePorcentaje.getDescripcion()!=null && newRetencionFuentePorcentaje.getDescripcion()!=""
+				  && newRetencionFuentePorcentaje.getCodigoInstitucionControl()!=0 &&
+						  newRetencionFuentePorcentaje.getFechaDesde()!=null &&
+							newRetencionFuentePorcentaje.getFechaHasta()!=null &&
+						  newRetencionFuentePorcentaje.getValor()!=0 &&
+							newRetencionFuentePorcentaje.getDeCada()!=0 &&
+							newRetencionFuentePorcentaje.getPorcentaje()!=0 &&
+							newRetencionFuentePorcentaje.getSriRetFuCodigo()!=0 &&
+				  aceptado
+				  ) {
+			  
+			  repository7.save(newRetencionFuentePorcentaje);
+		  }
+	  }
+	  
+	  return repository7.findAll();
+  }
+  
+  @PutMapping("/retencionFuentePorcentaje")
+  public void ReplaceRetencionFuentePorcentaje(@RequestBody RetencionFuentePorcentaje newRetencionFuentePorcentaje) {
+	  RetencionFuentePorcentaje retencionTarifaPorcentaje = repository7.findById(newRetencionFuentePorcentaje.getCodigo())
+      .orElseThrow(() -> new ImpuestoTarifaNotFoundException(newRetencionFuentePorcentaje.getCodigo()));
+	  retencionTarifaPorcentaje.setDescripcion(newRetencionFuentePorcentaje.getDescripcion());
+	  retencionTarifaPorcentaje.setCodigoInstitucionControl(newRetencionFuentePorcentaje.getCodigoInstitucionControl());
+	  retencionTarifaPorcentaje.setObservacionEstado(newRetencionFuentePorcentaje.getObservacionEstado());
+	  retencionTarifaPorcentaje.setFechaEstado(newRetencionFuentePorcentaje.getFechaEstado());
+	  retencionTarifaPorcentaje.setEstado(newRetencionFuentePorcentaje.getEstado());
+	  repository7.save(retencionTarifaPorcentaje);
+    
+  }
+  
+  @PutMapping("/retencionFuentePorcentaje/varios")
+  public void ReplaceRetencionFuentePorcentajeVarios(@RequestBody List<RetencionFuentePorcentaje> lista) {
+	  for(RetencionFuentePorcentaje newRetencionFuentePorcentaje:lista) {
+		  RetencionFuentePorcentaje retencionTarifaPorcentaje = repository7.findById(newRetencionFuentePorcentaje.getCodigo())
+			      .orElseThrow(() -> new ImpuestoTarifaNotFoundException(newRetencionFuentePorcentaje.getCodigo()));
+				  retencionTarifaPorcentaje.setDescripcion(newRetencionFuentePorcentaje.getDescripcion());
+				  retencionTarifaPorcentaje.setCodigoInstitucionControl(newRetencionFuentePorcentaje.getCodigoInstitucionControl());
+				  retencionTarifaPorcentaje.setObservacionEstado(newRetencionFuentePorcentaje.getObservacionEstado());
+				  retencionTarifaPorcentaje.setFechaEstado(newRetencionFuentePorcentaje.getFechaEstado());
+				  retencionTarifaPorcentaje.setEstado(newRetencionFuentePorcentaje.getEstado());
+				  repository7.save(retencionTarifaPorcentaje);
+	  }
+	  
+    
+  }
+  
   @PutMapping("/employees/{id}")
   ErrorDetail replaceEmployee(@RequestBody ErrorDetail newEmployee, @PathVariable Long id) {
     

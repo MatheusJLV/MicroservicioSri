@@ -14,7 +14,8 @@ class LoadDatabase {
   @Bean
   CommandLineRunner initDatabase(ErrorRepository repository,ComprobanteRepository repository2
 		  ,PuntoEmisionRepository repository3,ImpuestoRepository repository4
-		  ,ImpuestoTarifaRepository repository5) {
+		  ,ImpuestoTarifaRepository repository5,RetencionFuenteRepository repository6
+		  ,RetencionFuentePorcentajeRepository repository7) {
 
     return args -> {
       log.info("Preloading " + repository.save(new ErrorDetail("Bilbo Baggins", "burglar")));
@@ -27,6 +28,10 @@ class LoadDatabase {
       log.info("Preloading 4 " + repository4.save(new Impuesto("imp 2")));
       log.info("Preloading 5 " + repository5.save(new ImpuestoTarifa(1,"imp tarif 1")));
       log.info("Preloading 5 " + repository5.save(new ImpuestoTarifa(2,"imp tarif 2")));
+      log.info("Preloading 6 " + repository6.save(new RetencionFuente(1,"retencion 1")));
+      log.info("Preloading 6 " + repository6.save(new RetencionFuente(2,"retencion 2")));
+      log.info("Preloading 7 " + repository7.save(new RetencionFuentePorcentaje("retencion porcentaje 1")));
+      log.info("Preloading 7 " + repository7.save(new RetencionFuentePorcentaje("retencion porcentaje 2")));
     };
   }
 }
