@@ -27,11 +27,14 @@ class ErrorController {
   private final ImpuestoTarifaRepository repository5;
   private final RetencionFuenteRepository repository6;
   private final RetencionFuentePorcentajeRepository repository7;
+  private final TipoBienServicioRepository repository8;
+  private final ClaseContribuyenteRtfRepository repository9;
 
   ErrorController(ErrorRepository repository, ComprobanteRepository repository2,
 		  PuntoEmisionRepository repository3, ImpuestoRepository repository4,
 		  ImpuestoTarifaRepository repository5, RetencionFuenteRepository repository6
-		  , RetencionFuentePorcentajeRepository repository7) {
+		  , RetencionFuentePorcentajeRepository repository7, TipoBienServicioRepository repository8
+		 , ClaseContribuyenteRtfRepository repository9) {
     this.repository = repository;
     this.repository2 = repository2;
     this.repository3 = repository3;
@@ -39,30 +42,11 @@ class ErrorController {
     this.repository5 = repository5;
     this.repository6 = repository6;
     this.repository7 = repository7;
+    this.repository8 = repository8;
+    this.repository9 = repository9;
   }
 
 
-  // Aggregate root
-  // tag::get-aggregate-root[]
-  @GetMapping("/employees")
-  List<ErrorDetail> all() {
-    return repository.findAll();
-  }
-  // end::get-aggregate-root[]
-
-  @PostMapping("/employees")
-  ErrorDetail newEmployee(@RequestBody ErrorDetail newEmployee) {
-    return repository.save(newEmployee);
-  }
-
-  // Single item
-  
-  @GetMapping("/employees/{id}")
-  ErrorDetail one(@PathVariable Long id) {
-    
-    return repository.findById(id)
-      .orElseThrow(() -> new ErrorNotFoundException(id));
-  }
   
   @GetMapping("/sri")
   List<ErrorDetail> getErrorPorEstados(@RequestParam(required = false) Long codigo, 
@@ -645,12 +629,13 @@ class ErrorController {
   public List<ImpuestoTarifa> newImpuestoTarifa(@RequestBody List<ImpuestoTarifa> lista) {
 	  //validar fecha, sri codimp, porcentaje, ce cada, valor, fecha desde, hasta
 	  List<ImpuestoTarifa> listado;
+	  boolean aceptado;
 	  for(ImpuestoTarifa newImpuestoTarifa:lista) {
 		  Sri2Application.Log.info("Impuesto tarifa recibido: "+newImpuestoTarifa);
 		  listado=repository5.findAll();
 		  Date refSuperior,refInferior;
 		  
-		  boolean aceptado=true;
+		  aceptado=true;
 		  if(newImpuestoTarifa.getFechaDesde()!=null &&
 				  newImpuestoTarifa.getFechaHasta()!=null) {
 			  for (int i = 0; i<listado.size(); i=i+1) {
@@ -978,23 +963,231 @@ class ErrorController {
     
   }
   
-  @PutMapping("/employees/{id}")
-  ErrorDetail replaceEmployee(@RequestBody ErrorDetail newEmployee, @PathVariable Long id) {
-    
-    return repository.findById(id)
-      .map(employee -> {
-        employee.setName(newEmployee.getName());
-        employee.setRole(newEmployee.getRole());
-        return repository.save(employee);
-      })
-      .orElseGet(() -> {
-        newEmployee.setId(id);
-        return repository.save(newEmployee);
-      });
+  @GetMapping("/tipoBienServicio")
+  List<TipoBienServicio> gettipoBienServicioPorEstados(@RequestParam(required = false) Integer codigo, 
+		  @RequestParam(required = false) String descripcion) {
+	  List<TipoBienServicio> listado=repository8.findAll();
+	  List<TipoBienServicio> listado2=new ArrayList<TipoBienServicio>();
+	  for(TipoBienServicio tipoBienServicio:listado) {
+		  if("A".equals(tipoBienServicio.getEstado())||"I".equals(tipoBienServicio.getEstado())) {
+			  listado2.add(tipoBienServicio);
+		  }
+	  }
+	  
+	  Sri2Application.Log.info("tipo bien servicio recibido: "+codigo);
+	  
+	  if(codigo!=null) {
+		  listado=listado2;
+		  listado2=new ArrayList<TipoBienServicio>();
+		  
+		  for(TipoBienServicio tipoBienServicio:listado) {
+			  Sri2Application.Log.info("Codigo analizado: "+tipoBienServicio.getCodigo());
+			  if(codigo==(tipoBienServicio.getCodigo())) {
+				  listado2.add(tipoBienServicio);
+			  }
+		  }
+	  }
+	  
+	  Sri2Application.Log.info("Descripcion recibida: "+descripcion);
+	  if(descripcion!=null) {
+		  listado=listado2;
+		  listado2=new ArrayList<TipoBienServicio>();
+		  for(TipoBienServicio tipoBienServicio:listado) {
+			  Sri2Application.Log.info("descripcion analizada: "+tipoBienServicio.getDescripcion());
+			  if(descripcion.equals(tipoBienServicio.getDescripcion())) {
+				  listado2.add(tipoBienServicio);
+			  }
+		  }
+	  }
+	  
+	  
+	  return listado2;
+      
   }
+  
+  @PostMapping("/tipoBienServicio")
+  public void newTipoBienServicio(@RequestBody TipoBienServicio newTipoBienServicio) {
+	  Sri2Application.Log.info("Tipo Bien Servicio recibido: "+newTipoBienServicio);
+	  if(newTipoBienServicio.getDescripcion()!=null && newTipoBienServicio.getDescripcion()!="" &&
+			  ("S".equals(newTipoBienServicio.getUsaImpuesto())||"N".equals(newTipoBienServicio.getUsaImpuesto()))&&
+			  ("S".equals(newTipoBienServicio.getUsaRenta())||"N".equals(newTipoBienServicio.getUsaRenta()))) {
+		  repository8.save(newTipoBienServicio);
+	  }
+  }
+  
+  @PostMapping("/tipoBienServicio/varios")
+  public void newTipoBienServicioVarios(@RequestBody List<TipoBienServicio> listado) {
+	  for(TipoBienServicio newTipoBienServicio: listado) {
+		  Sri2Application.Log.info("Tipo Bien Servicio recibido: "+newTipoBienServicio);
+		  if(newTipoBienServicio.getDescripcion()!=null && newTipoBienServicio.getDescripcion()!="" &&
+				  ("S".equals(newTipoBienServicio.getUsaImpuesto())||"N".equals(newTipoBienServicio.getUsaImpuesto()))&&
+				  ("S".equals(newTipoBienServicio.getUsaRenta())||"N".equals(newTipoBienServicio.getUsaRenta()))) {
+			  repository8.save(newTipoBienServicio);
+		  }
+	  }
+	  
+  }
+  
+  @PutMapping("/tipoBienServicio")
+  public void ReplaceTipoBienServicio(@RequestBody TipoBienServicio newTipoBienServicio) {
+	  TipoBienServicio tipoBienServicio = repository8.findById(newTipoBienServicio.getCodigo())
+      .orElseThrow(() -> new TipoBienServicioNotFoundException(newTipoBienServicio.getCodigo()));
+	  tipoBienServicio.setDescripcion(newTipoBienServicio.getDescripcion());
+	  tipoBienServicio.setObservacionEstado(newTipoBienServicio.getObservacionEstado());
+	  tipoBienServicio.setFechaEstado(newTipoBienServicio.getFechaEstado());
+	  tipoBienServicio.setEstado(newTipoBienServicio.getEstado());
+	  tipoBienServicio.setUsaImpuesto(newTipoBienServicio.getUsaImpuesto());
+	  tipoBienServicio.setUsaRenta(newTipoBienServicio.getUsaRenta());
+	  repository8.save(tipoBienServicio);
 
-  @DeleteMapping("/employees/{id}")
-  void deleteEmployee(@PathVariable Long id) {
-    repository.deleteById(id);
+    
   }
+  
+  @PutMapping("/tipoBienServicio/varios")
+  public void ReplaceTipoBienServicioVarios(@RequestBody List<TipoBienServicio> listado) {
+	  for(TipoBienServicio newTipoBienServicio: listado) {
+		  TipoBienServicio tipoBienServicio = repository8.findById(newTipoBienServicio.getCodigo())
+			      .orElseThrow(() -> new TipoBienServicioNotFoundException(newTipoBienServicio.getCodigo()));
+				  tipoBienServicio.setDescripcion(newTipoBienServicio.getDescripcion());
+				  tipoBienServicio.setObservacionEstado(newTipoBienServicio.getObservacionEstado());
+				  tipoBienServicio.setFechaEstado(newTipoBienServicio.getFechaEstado());
+				  tipoBienServicio.setEstado(newTipoBienServicio.getEstado());
+				  tipoBienServicio.setUsaImpuesto(newTipoBienServicio.getUsaImpuesto());
+				  tipoBienServicio.setUsaRenta(newTipoBienServicio.getUsaRenta());
+				  repository8.save(tipoBienServicio);
+	  }
+   
+  }
+  
+  @GetMapping("/claseContribuyenteRtf")
+  List<ClaseContribuyenteRtf> getClaseContribuyenteRtfPorEstados(@RequestParam(required = false) Integer codigoImp, 
+		  @RequestParam(required = false) Integer codigoBS) {
+	  List<ClaseContribuyenteRtf> listado=repository9.findAll();
+	  List<ClaseContribuyenteRtf> listado2=new ArrayList<ClaseContribuyenteRtf>();
+	  for(ClaseContribuyenteRtf claseContribuyenteRtf:listado) {
+		  if("A".equals(claseContribuyenteRtf.getEstado())||"I".equals(claseContribuyenteRtf.getEstado())) {
+			  listado2.add(claseContribuyenteRtf);
+		  }
+	  }
+	  
+	  Sri2Application.Log.info("tipo bien servicio recibido: "+codigoImp);
+	  
+	  if(codigoImp!=null) {
+		  listado=listado2;
+		  listado2=new ArrayList<ClaseContribuyenteRtf>();
+		  
+		  for(ClaseContribuyenteRtf claseContribuyenteRtf:listado) {
+			  Sri2Application.Log.info("Codigo analizado: "+claseContribuyenteRtf.getSriImpuesCodigo());
+			  if(codigoImp==(claseContribuyenteRtf.getSriImpuesCodigo())) {
+				  listado2.add(claseContribuyenteRtf);
+			  }
+		  }
+	  }
+	  
+	  Sri2Application.Log.info("Descripcion recibida: "+codigoBS);
+	  if(codigoBS!=null) {
+		  listado=listado2;
+		  listado2=new ArrayList<ClaseContribuyenteRtf>();
+		  for(ClaseContribuyenteRtf claseContribuyenteRtf:listado) {
+			  Sri2Application.Log.info("codigo analizado: "+claseContribuyenteRtf.getSriTipBsCodigo());
+			  if(codigoBS.equals(claseContribuyenteRtf.getSriTipBsCodigo())) {
+				  listado2.add(claseContribuyenteRtf);
+			  }
+		  }
+	  }
+	  
+	  
+	  return listado2;
+      
+  }
+  
+  @PostMapping("/claseContribuyenteRtf")
+  public void newClaseContribuyenteRtf(@RequestBody ClaseContribuyenteRtf newClaseContribuyenteRtf) {
+	  Sri2Application.Log.info("ClaseContribuyenteRtf recibidA: "+newClaseContribuyenteRtf);
+	  List<Impuesto> listado1=repository4.findAll();
+	  List<TipoBienServicio> listado2=repository8.findAll();
+	  Set<Integer> existentesImp = new HashSet<Integer>();
+	  Set<Integer> existentesBS = new HashSet<Integer>();
+	  for(Impuesto item:listado1) {
+		  existentesImp.add(item.getCodigo());
+	  }
+	  for(TipoBienServicio item:listado2) {
+		  existentesBS.add(item.getCodigo());
+	  }
+
+	  if(existentesImp.contains(newClaseContribuyenteRtf.getSriImpuesCodigo()) 
+			  && existentesBS.contains(newClaseContribuyenteRtf.getSriTipBsCodigo()) &&
+			  newClaseContribuyenteRtf.getSriImpuesCodigo()!=0 && newClaseContribuyenteRtf.getSriTipBsCodigo()!=0 &&
+			  ("S".equals(newClaseContribuyenteRtf.getRetiene())||"N".equals(newClaseContribuyenteRtf.getRetiene()))&&
+			  newClaseContribuyenteRtf.getPorcentaje()!=0 && newClaseContribuyenteRtf.getDeCada()!=0 
+			  && newClaseContribuyenteRtf.getAgeCkaCoRetenerACodigo()!=0
+			  && newClaseContribuyenteRtf.getAgeCkaCoRetenerDeCodigo()!=0
+			  ) {
+		  repository9.save(newClaseContribuyenteRtf);
+	  }
+  }
+  
+  @PostMapping("/claseContribuyenteRtf/varios")
+  public void newClaseContribuyenteRtfVarios(@RequestBody List<ClaseContribuyenteRtf> lista) {
+	  
+	  List<Impuesto> listado1=repository4.findAll();
+	  List<TipoBienServicio> listado2=repository8.findAll();
+	  Set<Integer> existentesImp = new HashSet<Integer>();
+	  Set<Integer> existentesBS = new HashSet<Integer>();
+	  for(Impuesto item:listado1) {
+		  existentesImp.add(item.getCodigo());
+	  }
+	  for(TipoBienServicio item:listado2) {
+		  existentesBS.add(item.getCodigo());
+	  }
+	  
+	  for(ClaseContribuyenteRtf newClaseContribuyenteRtf:lista){
+		  Sri2Application.Log.info("ClaseContribuyenteRtf recibidA: "+newClaseContribuyenteRtf);
+		  //VALIDAR TIP IMPUESTO Y BS
+		  if(existentesImp.contains(newClaseContribuyenteRtf.getSriImpuesCodigo()) 
+				  && existentesBS.contains(newClaseContribuyenteRtf.getSriTipBsCodigo()) &&
+				  newClaseContribuyenteRtf.getSriImpuesCodigo()!=0 && newClaseContribuyenteRtf.getSriTipBsCodigo()!=0 &&
+				  ("S".equals(newClaseContribuyenteRtf.getRetiene())||"N".equals(newClaseContribuyenteRtf.getRetiene()))&&
+				  newClaseContribuyenteRtf.getPorcentaje()!=0 && newClaseContribuyenteRtf.getDeCada()!=0 
+				  && newClaseContribuyenteRtf.getAgeCkaCoRetenerACodigo()!=0
+				  && newClaseContribuyenteRtf.getAgeCkaCoRetenerDeCodigo()!=0
+				  ) {
+			  repository9.save(newClaseContribuyenteRtf);
+		  }
+	  }
+	  
+  }
+  
+  @PutMapping("/claseContribuyenteRtf")
+  public void ReplaceClaseContribuyenteRtf(@RequestBody ClaseContribuyenteRtf newClaseContribuyenteRtf) {
+	  ClaseContribuyenteRtf claseContribuyenteRtf = repository9.findById(newClaseContribuyenteRtf.getCodigo())
+      .orElseThrow(() -> new ClaseContribuyenteRtfNotFoundException(newClaseContribuyenteRtf.getCodigo()));
+	  claseContribuyenteRtf.setRetiene(newClaseContribuyenteRtf.getRetiene());
+	  claseContribuyenteRtf.setPorcentaje(newClaseContribuyenteRtf.getPorcentaje());
+	  claseContribuyenteRtf.setDeCada(newClaseContribuyenteRtf.getDeCada());
+	  claseContribuyenteRtf.setEstado(newClaseContribuyenteRtf.getEstado());
+	  claseContribuyenteRtf.setFechaEstado(newClaseContribuyenteRtf.getFechaEstado());
+	  claseContribuyenteRtf.setObservacionEstado(newClaseContribuyenteRtf.getObservacionEstado());
+	  repository9.save(newClaseContribuyenteRtf);
+
+    
+  }
+  
+  @PutMapping("/claseContribuyenteRtf/varios")
+  public void ReplaceClaseContribuyenteRtfVarios(@RequestBody List<ClaseContribuyenteRtf> lista) {
+	  for(ClaseContribuyenteRtf newClaseContribuyenteRtf:lista){
+		  ClaseContribuyenteRtf claseContribuyenteRtf = repository9.findById(newClaseContribuyenteRtf.getCodigo())
+			      .orElseThrow(() -> new ClaseContribuyenteRtfNotFoundException(newClaseContribuyenteRtf.getCodigo()));
+				  claseContribuyenteRtf.setRetiene(newClaseContribuyenteRtf.getRetiene());
+				  claseContribuyenteRtf.setPorcentaje(newClaseContribuyenteRtf.getPorcentaje());
+				  claseContribuyenteRtf.setDeCada(newClaseContribuyenteRtf.getDeCada());
+				  claseContribuyenteRtf.setEstado(newClaseContribuyenteRtf.getEstado());
+				  claseContribuyenteRtf.setFechaEstado(newClaseContribuyenteRtf.getFechaEstado());
+				  claseContribuyenteRtf.setObservacionEstado(newClaseContribuyenteRtf.getObservacionEstado());
+				  repository9.save(newClaseContribuyenteRtf);
+	  }
+
+  }
+  
+  
 }

@@ -15,7 +15,9 @@ class LoadDatabase {
   CommandLineRunner initDatabase(ErrorRepository repository,ComprobanteRepository repository2
 		  ,PuntoEmisionRepository repository3,ImpuestoRepository repository4
 		  ,ImpuestoTarifaRepository repository5,RetencionFuenteRepository repository6
-		  ,RetencionFuentePorcentajeRepository repository7) {
+		  ,RetencionFuentePorcentajeRepository repository7
+		  ,TipoBienServicioRepository repository8, ClaseContribuyenteRtfRepository repository9
+		  ) {
 
     return args -> {
       log.info("Preloading " + repository.save(new ErrorDetail("Bilbo Baggins", "burglar")));
@@ -32,6 +34,10 @@ class LoadDatabase {
       log.info("Preloading 6 " + repository6.save(new RetencionFuente(2,"retencion 2")));
       log.info("Preloading 7 " + repository7.save(new RetencionFuentePorcentaje("retencion porcentaje 1")));
       log.info("Preloading 7 " + repository7.save(new RetencionFuentePorcentaje("retencion porcentaje 2")));
+      log.info("Preloading 8 " + repository8.save(new TipoBienServicio("bien servicio 1")));
+      log.info("Preloading 8 " + repository8.save(new TipoBienServicio("bien servicio 2")));
+      log.info("Preloading 9 " + repository9.save(new ClaseContribuyenteRtf("ClaseContribuyenteRtf 1")));
+      log.info("Preloading 9 " + repository9.save(new ClaseContribuyenteRtf("ClaseContribuyenteRtf 2")));
     };
   }
 }
